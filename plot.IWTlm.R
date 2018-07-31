@@ -36,15 +36,15 @@
 # coefficients report the gray areas corresponding to significant t-tests for the corresponding 
 # covariate.
 
-plot.IWTlm <- function(IWTlmModel, 
+autoplot.IWTlm <- function(IWTlmModel,
+                        prompt=T,
                        save_output=F,
-                       layout_vertical=F
+                       layout_vertical=F,
                        xrange = c(0,1), 
                        alpha1 = 0.05, 
                        alpha2 = 0.01, 
                        plot_adjpval = FALSE,
                        plot_unadjpval = FALSE,
-                       col = c(1,rainbow(dim(x$adjusted_pval_part)[1])), 
                        ylim = NULL,
                        ylimcoeff= NULL,
                        ylab='Functional Data', 
@@ -82,23 +82,7 @@ plot.IWTlm <- function(IWTlmModel,
   main_F <- sub("^ : +", "", main_F)
   
   
-  difference1 <- which(object$adjusted_pval_F < alpha1)
-  if (length(difference1) > 0) {
-    
-    min_rect1 <- abscissa_pval[difference1]
-    max_rect1 <- min_rect1 + (abscissa_pval[2] - abscissa_pval[1])
-    
-  }
-  
-  
-  difference2 <- which(object$adjusted_pval_F < alpha2)
-  
-  if (length(difference2) > 0) {
-    min_rect2 <- abscissa_pval[difference2]
-    max_rect2 <- min_rect2 + (abscissa_pval[2] - abscissa_pval[1])
-    
-  }
-  
+
   
 ###set theme used for plotting:
   IWTtheme=theme_minimal()+
@@ -121,7 +105,7 @@ plot.IWTlm <- function(IWTlmModel,
   
   diff_df=na.omit(diff_df)
   
-  diff_df=diff_df[,significance:=as.factor(significance)]
+  diff_df=diff_df[,significance:=factor(significance,c(alpha2,alpha1))]
   
   
   
@@ -130,7 +114,7 @@ plot.IWTlm <- function(IWTlmModel,
   data_plot=ggplot(data=data_dt,aes(x=abscissa_smooth,y=value,group=variable)) +
           geom_rect(inherit.aes = F, data=diff_df, mapping=aes(xmin=min_rect,xmax=max_rect, ymin=-Inf,ymax=Inf,alpha=significance),size=0,col=NA) + 
           #geom_rect(inherit.aes = F, data=dt_rectF2, mapping=aes(xmin=min_rect,xmax=max_rect, ymin=-Inf,ymax=Inf),fill='blue',alpha=.3) + 
-          scale_alpha_discrete(range=c(.6,.2)) + 
+          scale_alpha_discrete(range=c(.6,.3),drop=FALSE) + 
           geom_line(size=.8) + 
           labs(title=main_F,y=ylab) +
           IWTtheme
@@ -160,29 +144,26 @@ diff_df=melt(diff_df,measure.vars = 1:npar,id.vars=c('min_rect','max_rect'))
 
 diff_df[value<alpha1,significance:=alpha1]
 diff_df[value<alpha2,significance:=alpha2]
+
 diff_df[min_rect>1,min_rect:=NA]
 diff_df[max_rect>1,max_rect:=NA]
 
 diff_df=na.omit(diff_df)
-
-diff_df=diff_df[,significance:=as.factor(significance)]
-
+diff_df=diff_df[,significance:=factor(significance,c(alpha2,alpha1))]
 
 
-coeff_plot=ggplot(data=coeff_dt,aes(x=abscissa_smooth,y=value,group=variable,fill=variable,color=variable)) +
-  geom_rect(inherit.aes = F, data=diff_df, mapping=aes(xmin=min_rect,xmax=max_rect, ymin=-Inf,ymax=Inf,alpha=significance,fill=variable),size=0,col=NA) + 
-  
-  scale_alpha_discrete(range=c(.6,.2)) + 
+
+coeff_plot=ggplot(data=coeff_dt,aes(x=abscissa_smooth,y=value,color=variable)) +
+  geom_rect(inherit.aes = F, data=diff_df, mapping=aes(xmin=min_rect,xmax=max_rect, ymin=-Inf,ymax=Inf,alpha=significance,fill=variable),na.rm = T) + 
+  scale_fill_discrete(drop=F)+
+  scale_alpha_discrete(range=c(.6,.3),drop=FALSE) + 
   geom_line(size=1) + 
   facet_grid(variable~.) +
   labs(title=main_t,y='Functional Coefficient') +
   IWTtheme
 
 
-coeff_plot 
-
-
-
+coeff_plot
 
 main_pval_t <- paste(main, ': t-Test P-Value Functions')
 main_pval_t <- sub("^ : +", "", main_pval_t)
@@ -206,11 +187,9 @@ pval_plot_t=ggplot(data=pval_dt_tot ,aes(x=abscissa_smooth,y=value,color=variabl
             labs(title=main_pval_t,y='P-Value Function') +
             ylim(0,1) +
             IWTtheme
-pval_plot_t
 
 
-width_spec=100
-ggsave('t_tests_pval.pdf',pval_plot_t,width = width_spec, height=(width_spec/sqrt(2))*npar, units = 'mm')
+
 
 
 #plot f-test pvalues
@@ -236,12 +215,13 @@ pval_plot_f=ggplot(data=pval_df_tot ,aes(x=abscissa_smooth,y=value))+
 
 plot_list=list(data_plot=data_plot,coeff_plot=coeff_plot,pval_t_plot=pval_plot_t,pval_plot_F=pval_plot_f)
 
+if(prompt){par(ask=T)}
 plot(data_plot)
 plot(coeff_plot)
-plot(pval_plot_t)
 plot(pval_plot_f)
+plot(pval_plot_t)
 
-if(saveoutput) return(plot_list)
+if(save_output) return(plot_list)
 }
 
 
