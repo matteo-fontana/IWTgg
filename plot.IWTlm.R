@@ -37,7 +37,8 @@
 # covariate.
 
 autoplot.IWTlm <- function(IWTlmModel,
-                        prompt=T,
+                           
+                      prompt=T,
                        save_output=F,
                        layout_vertical=F,
                        xrange = c(0,1), 
@@ -48,6 +49,7 @@ autoplot.IWTlm <- function(IWTlmModel,
                        ylim = NULL,
                        ylimcoeff= NULL,
                        ylab='Functional Data', 
+                       xlab='abscissa_smooth',
                        main=NULL, 
                        lwd = 1, 
                        type='l',
@@ -71,10 +73,10 @@ autoplot.IWTlm <- function(IWTlmModel,
   p <- length(object$unadjusted_pval_F)
   J <- p
   n <- dim(object$data.eval)[1]
-  xmin <- xrange[1]
-  xmax <- xrange[2]
-  abscissa_pval <- seq(xmin, xmax, len = p)
-  abscissa_smooth <- seq(xmin, xmax, len = J)
+  minx <- xrange[1]
+  maxx <- xrange[2]
+  abscissa_pval <- seq(minx, maxx, len = p)
+  abscissa_smooth <- seq(minx, maxx, len = J)
   
   devAskNewPage(ask = F)  
   
@@ -88,7 +90,7 @@ autoplot.IWTlm <- function(IWTlmModel,
   IWTtheme=theme_minimal()+
     theme(strip.background = element_blank(), strip.text.y = element_blank(), 
           panel.grid.major = element_line(color='grey80'),
-          panel.grid.minor = element_line(color='grey80'))
+          panel.grid.minor = element_line(color='grey80'),)
   
 
   
@@ -100,8 +102,8 @@ autoplot.IWTlm <- function(IWTlmModel,
   
   diff_df[value<alpha1,significance:=alpha1]
   diff_df[value<alpha2,significance:=alpha2]
-  diff_df[min_rect>1,min_rect:=NA]
-  diff_df[max_rect>1,max_rect:=NA]
+  diff_df[min_rect>maxx,min_rect:=NA]
+  diff_df[max_rect>maxx,max_rect:=NA]
   
   diff_df=na.omit(diff_df)
   
@@ -116,7 +118,7 @@ autoplot.IWTlm <- function(IWTlmModel,
           #geom_rect(inherit.aes = F, data=dt_rectF2, mapping=aes(xmin=min_rect,xmax=max_rect, ymin=-Inf,ymax=Inf),fill='blue',alpha=.3) + 
           scale_alpha_discrete(range=c(.6,.3),drop=FALSE) + 
           geom_line(size=.8) + 
-          labs(title=main_F,y=ylab) +
+          labs(title=main_F,y=ylab,x=xlab) +
           IWTtheme
             
   
@@ -124,7 +126,8 @@ autoplot.IWTlm <- function(IWTlmModel,
 
 
 
-  
+data_plot  
+
 #####COEFFICIENTS PLOT#####
 
 npar=length(rownames(object$coeff.regr.eval))
@@ -145,8 +148,8 @@ diff_df=melt(diff_df,measure.vars = 1:npar,id.vars=c('min_rect','max_rect'))
 diff_df[value<alpha1,significance:=alpha1]
 diff_df[value<alpha2,significance:=alpha2]
 
-diff_df[min_rect>1,min_rect:=NA]
-diff_df[max_rect>1,max_rect:=NA]
+diff_df[min_rect>maxx,min_rect:=NA]
+diff_df[max_rect>maxx,max_rect:=NA]
 
 diff_df=na.omit(diff_df)
 diff_df=diff_df[,significance:=factor(significance,c(alpha2,alpha1))]
@@ -159,7 +162,7 @@ coeff_plot=ggplot(data=coeff_dt,aes(x=abscissa_smooth,y=value,color=variable)) +
   scale_alpha_discrete(range=c(.6,.3),drop=FALSE) + 
   geom_line(size=1) + 
   facet_grid(variable~.) +
-  labs(title=main_t,y='Functional Coefficient') +
+  labs(title=main_t,y='Functional Coefficient',x=xlab) +
   IWTtheme
 
 
@@ -184,7 +187,7 @@ pval_plot_t=ggplot(data=pval_dt_tot ,aes(x=abscissa_smooth,y=value,color=variabl
             facet_grid(variable~.) +
             geom_hline(yintercept = alpha1,alpha=.4) +
             geom_hline(yintercept = alpha2,alpha=.6) +
-            labs(title=main_pval_t,y='P-Value Function') +
+            labs(title=main_pval_t,y='P-Value Function',x=xlab) +
             ylim(0,1) +
             IWTtheme
 
@@ -207,7 +210,7 @@ pval_plot_f=ggplot(data=pval_df_tot ,aes(x=abscissa_smooth,y=value))+
   geom_line(aes(linetype=type),size=1) +
   geom_hline(yintercept = alpha1,alpha=.4) +
   geom_hline(yintercept = alpha2,alpha=.6) +
-  labs(title=main_pval_f,y='P-Value Function') +
+  labs(title=main_pval_f,y='P-Value Function',x=xlab) +
   ylim(0,1)+
   IWTtheme
 
